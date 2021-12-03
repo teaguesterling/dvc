@@ -96,12 +96,15 @@ def _update_names(names, items):
 def _collect_names(all_experiments, **kwargs):
     metric_names = defaultdict(dict)
     param_names = defaultdict(dict)
+    deps_names = set()
 
     for _, experiments in all_experiments.items():
         for exp_data in experiments.values():
             exp = exp_data.get("data", {})
             _update_names(metric_names, exp.get("metrics", {}).items())
             _update_names(param_names, exp.get("params", {}).items())
+            deps_names.update(exp.get("deps", {}).keys())
+
     metric_names = _filter_names(
         metric_names,
         "metrics",
@@ -115,7 +118,7 @@ def _collect_names(all_experiments, **kwargs):
         kwargs.get("exclude_params"),
     )
 
-    return metric_names, param_names
+    return metric_names, param_names, deps_names
 
 
 experiment_types = {
@@ -133,6 +136,7 @@ def _collect_rows(
     experiments,
     metric_names,
     param_names,
+    deps_names,
     precision=DEFAULT_PRECISION,
     sort_by=None,
     sort_order=None,
@@ -205,6 +209,11 @@ def _collect_rows(
             executor,
         ]
         fill_value = FILL_VALUE_ERRORED if results.get("error") else fill_value
+        for dep in deps_names:
+            hash_info = exp.get("deps", {}).get(dep, {}).get("hash")
+            if hash_info is not None:
+                hash_info = hash_info[:7]
+            row.append(hash_info or fill_value)
         _extend_row(
             row,
             metric_names,
@@ -325,6 +334,7 @@ def experiments_table(
     metric_names,
     param_headers,
     param_names,
+    deps_names,
     sort_by=None,
     sort_order=None,
     precision=DEFAULT_PRECISION,
@@ -344,6 +354,7 @@ def experiments_table(
             experiments,
             metric_names,
             param_names,
+            deps_names,
             sort_by=sort_by,
             sort_order=sort_order,
             precision=precision,
@@ -394,7 +405,7 @@ def show_experiments(
     include_params = _parse_filter_list(kwargs.pop("include_params", []))
     exclude_params = _parse_filter_list(kwargs.pop("exclude_params", []))
 
-    metric_names, param_names = _collect_names(
+    metric_names, param_names, deps_names = _collect_names(
         all_experiments,
         include_metrics=include_metrics,
         exclude_metrics=exclude_metrics,
@@ -410,6 +421,7 @@ def show_experiments(
         "parent",
         "State",
         "Executor",
+        *deps_names,
     ]
 
     names = {**metric_names, **param_names}
@@ -425,6 +437,7 @@ def show_experiments(
         metric_names,
         param_headers,
         param_names,
+        deps_names,
         kwargs.get("sort_by"),
         kwargs.get("sort_order"),
         kwargs.get("precision"),
@@ -451,14 +464,22 @@ def show_experiments(
         )
         td.drop(*merge_headers[1:])
 
-    headers = {"metrics": metric_headers, "params": param_headers}
+    headers = {
+        "metrics": metric_headers,
+        "params": param_headers,
+        "deps": deps_names,
+    }
     styles = {
         "Experiment": {"no_wrap": True, "header_style": "black on grey93"},
         "Created": {"header_style": "black on grey93"},
         "State": {"header_style": "black on grey93"},
         "Executor": {"header_style": "black on grey93"},
     }
-    header_bg_colors = {"metrics": "cornsilk1", "params": "light_cyan1"}
+    header_bg_colors = {
+        "metrics": "cornsilk1",
+        "params": "light_cyan1",
+        "deps": "plum2",
+    }
     styles.update(
         {
             header: {
