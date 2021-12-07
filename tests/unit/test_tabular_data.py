@@ -252,6 +252,29 @@ def test_drop_duplicates(axis, expected):
     assert list(td) == expected
 
 
+def test_drop_duplicates_ignore_empty():
+    td = TabularData(["col-1", "col-2", "col-3"], fill_value="-")
+    td.extend(
+        [["foo"], ["foo", "foo"], ["foo", "foo"], ["foo", "bar", "foobar"]]
+    )
+
+    assert list(td) == [
+        ["foo", "-", "-"],
+        ["foo", "foo", "-"],
+        ["foo", "foo", "-"],
+        ["foo", "bar", "foobar"],
+    ]
+
+    td.drop_duplicates("cols", ignore_empty=False)
+
+    assert list(td) == [
+        ["-", "-"],
+        ["foo", "-"],
+        ["foo", "-"],
+        ["bar", "foobar"],
+    ]
+
+
 def test_drop_duplicates_rich_text():
     from dvc.ui import ui
 
