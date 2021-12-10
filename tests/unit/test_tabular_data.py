@@ -244,6 +244,20 @@ def test_dropna(axis, how, data, expected):
 @pytest.mark.parametrize(
     "axis,expected",
     [
+        ("cols", [["foo", ""], ["foo", ""], ["foo", "foobar"]]),
+        ("rows", [["foo", "bar", ""], ["foo", "bar", "foobar"]]),
+    ],
+)
+def test_dropna_subset(axis, expected):
+    td = TabularData(["col-1", "col-2", "col-3"])
+    td.extend([["foo"], ["foo", "bar"], ["foo", "bar", "foobar"]])
+    td.dropna(axis, subset=["col-1", "col-2"])
+    assert list(td) == expected
+
+
+@pytest.mark.parametrize(
+    "axis,expected",
+    [
         (
             "rows",
             [
@@ -270,6 +284,51 @@ def test_drop_duplicates(axis, expected):
 
     td.drop_duplicates(axis)
 
+    assert list(td) == expected
+
+
+@pytest.mark.parametrize(
+    "axis,subset,expected",
+    [
+        (
+            "rows",
+            ["col-1"],
+            [["foo", "foo", "foo", "bar"]],
+        ),
+        (
+            "rows",
+            ["col-1", "col-3"],
+            [
+                ["foo", "foo", "foo", "bar"],
+                ["foo", "bar", "foobar", "bar"],
+            ],
+        ),
+        (
+            "cols",
+            ["col-1", "col-3"],
+            [
+                ["foo", "foo", "bar"],
+                ["bar", "foo", "bar"],
+                ["bar", "foobar", "bar"],
+            ],
+        ),
+    ],
+)
+def test_drop_duplicates_subset(axis, subset, expected):
+    td = TabularData(["col-1", "col-2", "col-3", "col-4"])
+    td.extend(
+        [
+            ["foo", "foo", "foo", "bar"],
+            ["foo", "bar", "foo", "bar"],
+            ["foo", "bar", "foobar", "bar"],
+        ]
+    )
+    assert list(td) == [
+        ["foo", "foo", "foo", "bar"],
+        ["foo", "bar", "foo", "bar"],
+        ["foo", "bar", "foobar", "bar"],
+    ]
+    td.drop_duplicates(axis, subset=subset)
     assert list(td) == expected
 
 
