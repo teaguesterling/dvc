@@ -785,7 +785,7 @@ def test_show_experiments_html(tmp_dir, mocker):
 
     show_experiments(all_experiments, html=True)
 
-    td.dropna.assert_called_with("rows", how="all")
+    td.dropna.assert_called_with("rows", how="all", subset=[])
 
     render_kwargs = td.render.call_args[1]
 
