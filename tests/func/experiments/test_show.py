@@ -258,6 +258,12 @@ def test_show_filter(
     cap = capsys.readouterr()
     assert "Created" not in cap.out
 
+    capsys.readouterr()
+    assert main(["exp", "show", "--drop=Created|Experiment"]) == 0
+    cap = capsys.readouterr()
+    assert "Created" not in cap.out
+    assert "Experiment" not in cap.out
+
 
 def test_show_multiple_commits(tmp_dir, scm, dvc, exp_stage):
     init_rev = scm.get_rev()
