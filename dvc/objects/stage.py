@@ -70,6 +70,8 @@ def _get_file_hash(fs_path, fs, name):
         hash_value = func(fs_path)
     elif name == "md5":
         hash_value = file_md5(fs_path, fs)
+    elif fs.fs.protocol == "file" and fs_path.endswith(".dir"):
+        hash_value = file_md5(fs_path, fs)
     else:
         raise NotImplementedError
 
